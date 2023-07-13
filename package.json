@@ -1,0 +1,24 @@
+{
+  "name": "olxba-scraper",
+  "version": "1.0.0",
+  "description": "A web scraper for the Bosnian listings site olx.ba ",
+  "main": "olx-scraper.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "olx.ba",
+    "scraper",
+    "crawler",
+    "listings"
+  ],
+  "author": "Teo Medesi",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^20.8.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
