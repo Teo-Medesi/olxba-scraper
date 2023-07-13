@@ -7,8 +7,9 @@ const example = async () => {
   const categories = await olx.getCategories();
   const category = await categories.getCategory("Vozila");
   const listings = await category.getListings();
+  const listing = await listings.getListing(listings.getAllListings()[0].url);
+  console.log(listing);
 
-  console.log(listings.getAllListings());
 
   await olx.close();
 }

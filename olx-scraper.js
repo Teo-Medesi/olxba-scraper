@@ -229,11 +229,43 @@ class Listings {
    */
   async getListing(url) {
     try {
+      const listing = this.#listings.find(listing => listing.url === url);
 
+      await this.#page.goto(url);
+
+      await this.#page.waitForSelector("body td");
+      const data = await this.#page.$$("body td");
+      const characteristics = [];
+
+      for (let i = 0; i < data.length; i += 2) {
+        try {
+          const key = await element.evaluate(element => element.textContent);
+          let value = await data[i + 1].evaluate(element => element.textContent);
+          let url;
+
+          if (!value) {
+            value = await data[i + 1].$eval("a", (element) => element.textContent);
+            url = await data[i + 1].$eval("a", (element) => element.href);
+          }
+
+          characteristics.push({ key, value, ...(url != null && { url }) });
+        }
+        catch (error) { continue; }
+      }
+
+      const paragraphs = await this.#page.$$(".ql-editor p");
+      let description = "";
+
+      for (const paragraph of paragraphs) {
+        const text = (await paragraph.evaluate(element => element.textContent)).trim();
+        description += ` ${text} `;
+      }
+
+      return new Listing({ ...listing, characteristics, description }, this.browser, this.#page);
     }
     catch (error) {
       await this.browser?.close();
-      throw new Error(`Error while getting listing, error: ${error}`);
+      console.error(`Error while getting listing, error: ${error}`);
     }
   }
 }
@@ -248,6 +280,7 @@ class Listing {
   location;
   url;
   coverImage;
+  characteristics;
   browser;
   #page;
 
@@ -258,6 +291,7 @@ class Listing {
     this.url = listing?.url;
     this.description = listing?.description;
     this.coverImage = listing?.coverImage;
+    this.characteristics = listing?.characteristics;
     this.#page = page;
     this.browser = browser;
   }
