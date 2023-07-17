@@ -32,7 +32,7 @@ class BaseScraper {
 }
 
 /**
- * base instance of KupujemProdajem scraper
+ * base instance of Olx scraper
  * @class
  */
 class Olx extends BaseScraper {
@@ -48,13 +48,6 @@ class Olx extends BaseScraper {
    */
   async getListingByUrl(url) {
     try {
-      /* title;
-      description;
-      price;
-      location;
-      url;
-      coverImage;
-      characteristics; */
       await this.page.goto(url);
       await this.page.waitForSelector(".details");
 
