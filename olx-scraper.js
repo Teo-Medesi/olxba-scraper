@@ -48,7 +48,58 @@ class Olx extends BaseScraper {
    */
   async getListingByUrl(url) {
     try {
+      /* title;
+      description;
+      price;
+      location;
+      url;
+      coverImage;
+      characteristics; */
+      await this.page.goto(url);
+      await this.page.waitForSelector(".details");
 
+      const title = (await this.page.$eval("h1.main-title-listing", element => element.textContent)).trim();
+      const price = (await this.page.$eval("span.price-heading", element => element.textContent)).trim();
+
+      const tagElements = await this.page.$$(".btn-pill");
+      const tags = [];
+
+      for (const tag of tagElements) {
+        const text = (await tag.evaluate(element => element.textContent)).trim();
+
+        tags.push(text);
+      }
+
+      await this.page.waitForSelector(".swiper-lazy");
+      const coverImage = await this.page.$eval(".swiper-lazy", element => element.src);
+
+      await this.page.waitForSelector("body td");
+      const data = await this.page.$$("body td");
+      const characteristics = [];
+
+      for (let i = 0; i < data.length; i += 2) {
+        try {
+          const key = (await data[i].evaluate(element => element.textContent)).trim();
+          let value = (await data[i + 1].evaluate(element => element.textContent)).trim();
+          let url;
+
+          if (!value) {
+            value = (await data[i + 1].$eval("a", (element) => element.textContent)).trim();
+            url = await data[i + 1].$eval("a", (element) => element.href);
+          }
+
+          characteristics.push({ key, value, ...(url != null && { url }) });
+        }
+        catch (error) {
+          console.error(`Error while getting characteristics, error: ${error}`);
+          continue;
+        }
+      }
+
+      let description = await this.page.$(".ql-editor");
+      description = (await description.evaluate(element => element.textContent)).trim();
+
+      return new Listing({ title, price, tags, url, coverImage, characteristics, description }, this.browser, this.page);
     }
     catch (error) {
       console.error(`Error while getting listing, error: ${error}`);
@@ -239,27 +290,25 @@ class Listings {
 
       for (let i = 0; i < data.length; i += 2) {
         try {
-          const key = await element.evaluate(element => element.textContent);
-          let value = await data[i + 1].evaluate(element => element.textContent);
+          const key = (await data[i].evaluate(element => element.textContent)).trim();
+          let value = (await data[i + 1].evaluate(element => element.textContent)).trim();
           let url;
 
           if (!value) {
-            value = await data[i + 1].$eval("a", (element) => element.textContent);
+            value = (await data[i + 1].$eval("a", (element) => element.textContent)).trim();
             url = await data[i + 1].$eval("a", (element) => element.href);
           }
 
           characteristics.push({ key, value, ...(url != null && { url }) });
         }
-        catch (error) { continue; }
+        catch (error) {
+          console.error(`Error while getting characteristics, error: ${error}`);
+          continue;
+        }
       }
 
-      const paragraphs = await this.#page.$$(".ql-editor p");
-      let description = "";
-
-      for (const paragraph of paragraphs) {
-        const text = (await paragraph.evaluate(element => element.textContent)).trim();
-        description += ` ${text} `;
-      }
+      let description = await this.#page.$(".ql-editor");
+      description = (await description.evaluate(element => element.textContent)).trim();
 
       return new Listing({ ...listing, characteristics, description }, this.browser, this.#page);
     }
@@ -281,6 +330,7 @@ class Listing {
   url;
   coverImage;
   characteristics;
+  tags;
   browser;
   #page;
 
@@ -292,6 +342,7 @@ class Listing {
     this.description = listing?.description;
     this.coverImage = listing?.coverImage;
     this.characteristics = listing?.characteristics;
+    this.tags = listing?.tags;
     this.#page = page;
     this.browser = browser;
   }
@@ -303,7 +354,17 @@ class Listing {
    */
   async getImages() {
     try {
+      await this.#page.waitForSelector("img.swiper-lazy");
 
+      const data = await this.#page.$$("img.swiper-lazy");
+      const images = [];
+
+      for (const image of data) {
+        const url = await image.evaluate(element => element.src);
+        url && images.push(url);
+      }
+
+      return images;
     }
     catch (error) {
       console.error(`Error while getting images, error: ${error}`);
