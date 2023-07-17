@@ -116,6 +116,35 @@ class Olx extends BaseScraper {
    */
   async getListingsBySearch(keywords) {
     try {
+      await this.page.goto(`https://olx.ba/pretraga?q=${encodeURIComponent(keywords)}`);
+      console.log("got to page")
+
+      const data = await this.page.$$(".cardd");
+      console.log("got all cards");
+      const listings = [];
+
+      for (const listing of data) {
+
+        console.log(listing);
+
+        const title = (await listing?.$eval("h1", (element) => element.textContent)).trim();
+        const coverImage = await listing?.$eval("img", (element) => element.src);
+        const url = await listing?.$eval("a", (element) => element.href);
+        const price = (await listing?.$eval("span.smaller", (element) => element.textContent)).trim();
+
+        const data = await listing?.$$(".standard-tag div");
+        const tags = [];
+
+        for (const tag of data) {
+          const title = await tag?.evaluate(element => element.textContent);
+
+          tags.push(title);
+        }
+
+        listings.push({ title, coverImage, url, price, tags });
+      }
+
+      return new Listings(listings, this.browser, this.page);
 
     }
     catch (error) {

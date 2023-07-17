@@ -4,8 +4,8 @@ const example = async () => {
   const olx = new Olx();
   await olx.init();
 
-  const listing = await olx.getListingByUrl("https://olx.ba/artikal/54240081/");
-  console.log(listing);
+  const listings = await olx.getListingsBySearch("traktor");
+  console.log(listings.getAllListings());
 
   await olx.close();
 }
